@@ -6,14 +6,14 @@
     <title>Where do NYC's yellow cabs slow down</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=IBM+Plex+Sans:wght@400;500display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=IBM+Plex+Sans:wght@400;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <div class="layout">
         <aside>
-            <h1>Where do NYC's yellow cabs slow down?<h1>
+            <h1>Where do NYC's yellow cabs slow down?</h1>
             <p class="lede">Every trip below was cleaned, joined to its pickup zone and priced per mile. Filter the city, then read the map, the clock and the routes.</p>
             <form id="filters">
                 <label>Pickup borough
@@ -36,7 +36,7 @@
                 <label>Paid by
                     <select name="payment"><option value=" ">Any method</option><option value="1">Credit card</option><option value="2">Cash</option></select>
                 </label>
-                <div class=buttons><button type="submit">Apply filters</button><button type="button" id="reset" classs="ghost">Reset</button></div>
+                <div class="buttons"><button type="submit">Apply filters</button><button type="button" id="reset" class="ghost">Reset</button></div>
             </form>
             <p id="ZoneChip" class="chip" hidden></p>
             <details>
@@ -47,7 +47,7 @@
         </aside>
         <main>
             <p id="status" class="status" role="status"></p>
-            <section id="kpis" class="kpis"></selection>
+            <section id="kpis" class="kpis"></section>
             <section class="panel">
                 <div class="panel-head">
                     <h2>City map</h2>
@@ -67,7 +67,7 @@
             <section class="panel">
                 <h2>Trip details</h2>
                 <div class="table-wrap"><table id="tripTable"></table></div>
-                <div class=pager><button id="prev" class="ghost">Previous</button><span id="pageInfo"></span><button id="next" class="ghost">Next</button></div>
+                <div class="pager"><button id="prev" class="ghost">Previous</button><span id="pageInfo"></span><button id="next" class="ghost">Next</button></div>
             </section>
         </main>
     </div>
