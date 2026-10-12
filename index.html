@@ -1,46 +1,78 @@
 <!DOCTYPE html>
 <html lang="en">
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1">
-        <title>Where do NYC's yellow cabs slow down</title>
-        <link rel="preconnect" href="https://fonts.googleapis.com">
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-        <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=IBM+Plex+Sans:wght@400;500display=swap" rel="stylesheet">
-        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
-        <link rel="stylesheet" href="style.css">
-    </head>
-    <body>
-        <div class="layout">
-            <aside>
-                <h1>Where do NYC's yellow cabs slow down?<h1>
-                <p class="lede">Every trip below was cleaned, joined to its pickup zone and priced per mile. Filter the city, then read the map, the clock and the routes.</p>
-                <form id="filters">
-                    <label>Pickup borough
-                        <select name="borough"><option value=" ">All boroughs</option><option>Manhattan</option><option>Brooklyn</option>
-                            <option>Queens</option><option>Bronx</option><option>Staten Island</option><option>EWR</option>
-                        </select>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Where do NYC's yellow cabs slow down</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=IBM+Plex+Sans:wght@400;500display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="layout">
+        <aside>
+            <h1>Where do NYC's yellow cabs slow down?<h1>
+            <p class="lede">Every trip below was cleaned, joined to its pickup zone and priced per mile. Filter the city, then read the map, the clock and the routes.</p>
+            <form id="filters">
+                <label>Pickup borough
+                    <select name="borough"><option value=" ">All boroughs</option><option>Manhattan</option><option>Brooklyn</option>
+                        <option>Queens</option><option>Bronx</option><option>Staten Island</option><option>EWR</option>
+                    </select>
+                </label>
+                <div class="pair">
+                <label>From hour<input type="number" name="hour_from" min="0" max="23" placeholder="0"></label>
+                <label>To hour<input type="number" name="hour_to" min="0" max="23" placeholder="23"></label>
+                </div>
+                <div class="pair">
+                <label>Min miles<input type="number" name="min_distance" min="0" step="0.5"></label>
+                <label>Max miles<input type="number" name="max_distance" min="0" step="0.5"></label>
+                </div>
+                <div class="pair">
+                <label>Min fare ($)<input type="number" name="min_fare" min="0"></label>
+                <label>Max fare ($)<input type="number" name="max_fare" min="0"></label>
+                </div>
+                <label>Paid by
+                    <select name="payment"><option value=" ">Any method</option><option value="1">Credit card</option><option value="2">Cash</option></select>
+                </label>
+                <div class=buttons><button type="submit">Apply filters</button><button type="button" id="reset" classs="ghost">Reset</button></div>
+            </form>
+            <p id="ZoneChip" class="chip" hidden></p>
+            <details>
+                <summary>Data Quality log</summary>
+                <p class="small">Rows removed during cleaning, by the first rule they broke.</p>
+                <ul id="quality"></ul>
+            </details>
+        </aside>
+        <main>
+            <p id="status" class="status" role="status"></p>
+            <section id="kpis" class="kpis"></selection>
+            <section class="panel">
+                <div class="panel-head">
+                    <h2>City map</h2>
+                    <label class="inline">Colour zones by
+                        <select id="metric"><option value="trips">Trips picked up</option><option value="fare_per_mile">Fare per mile</option>
+                            <option value="speed">Average speed</option><option value="tip">Tip %(card)</option></select>
                     </label>
-                    <div class="pair">
-                    <label>From hour<input type="number" name="hour_from" min="0" max="23" placeholder="0"></label>
-                    <label>To hour<input type="number" name="hour_to" min="0" max="23" placeholder="23"></label>
-                    </div>
-                    <div class="pair">
-                    <label>Min miles<input type="number" name="min_distance" min="0" step="0.5"></label>
-                    <label>Max miles<input type="number" name="max_distance" min="0" step="0.5"></label>
-                    </div>
-                    <div class="pair">
-                    <label>Min fare ($)<input type="number" name="min_fare" min="0"></label>
-                    <label>Max fare ($)<input type="number" name="max_fare" min="0"></label>
-                    </div>
-                    <label>Paid by
-                        <select name="payment"><option value=" ">Any method</option><option value="1">Credit card</option><option value="2">Cash</option></select>
-                    </label>
-                    <div class=buttons><button type="submit">Apply filters</button><button type="button" id="reset" classs="ghost">Reset</button></div>
-                </form>
-                <p id="ZoneChip" class="chip" hidden></p>
-                <details>
-                    <summary>Data Quality log</summary>
-                    <p class="small">Rows removed during cleaning, by the first rule they broke.</p>
-    </body>
-</html>
+                </div>
+                <div id="map" aria-label="Map of taxi zones"></div>
+                <div id="legend" class="legend"></div>
+                <p class="small">Click a zone to filter everything to trips starting there. Yellow lines are the busiest routes.</p>
+            </section>
+            <div class="two">
+                <section class="panel"><h2>Demand and speed by hour</h2><canvas id="hourChart"></canvas><p id="insight" class="insight"></p></section>
+                <section class="panel"><h2>Ten busiest routes</h2><canvas id="routeChart"></canvas></section>
+            </div>
+            <section class="panel">
+                <h2>Trip details</h2>
+                <div class="table-wrap"><table id="tripTable"></table></div>
+                <div class=pager><button id="prev" class="ghost">Previous</button><span id="pageInfo"></span><button id="next" class="ghost">Next</button></div>
+            </section>
+        </main>
+    </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+    <script src="app.js"></script>
+</body>
+</html
