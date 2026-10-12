@@ -1,0 +1,24 @@
+:root {
+    --ink: #1b2a41;
+    --paper: #eef1f4;
+    --card: #fff;
+    --taxi: #f7b500;
+    --teal: #1b998b;
+    --muted: #5b6778;
+    --line: #d5dbe3;
+}
+* { box-sizing: border-box; }
+body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font: 15px/1.5 "IBM Plex Sans", system-ui, sans-serif;
+}
+h1, h2 {
+    font-family: "Barlow Condensed", "Arial Narroe", sans-serif;
+    font-weight: 700;
+    line-height: 1.05;
+    margin: 0;
+}
+h1 { font-size: 2.3rem; }
+h2 { font-size: 1.4rem; }
