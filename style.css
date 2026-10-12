@@ -22,3 +22,7 @@ h1, h2 {
 }
 h1 { font-size: 2.3rem; }
 h2 { font-size: 1.4rem; }
+:focus-visible {
+    outline: 3px solid var(--teal);
+    outline-offset: 2px;
+}
