@@ -26,3 +26,79 @@ h2 { font-size: 1.4rem; }
     outline: 3px solid var(--teal);
     outline-offset: 2px;
 }
+.layout {
+    display: grid;
+    grid-template-columns: 300px 1fr;
+    min-height: 100vh;
+}
+aside {
+    background: var(--ink);
+    color: #fff;
+    padding: 24px 20px;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow-y: auto;
+}
+aside h1 { color: var(--taxi); margin-bottom: 10px; }
+.lede, details { color: #c9d2de; }
+.lede { margin: 0 0 20px; }
+form label {
+    display: b;ock;
+    font-size: 13px;
+    color: #c9d2de;
+    margin-bottom: 10px;
+}
+input, select {
+    width: 100%;
+    margin-top: 4px;
+    padding: 7px 8px;
+    border: 1px solid #3b4d68;
+    border-radius: 4px;
+    background: #24364f;
+    color: #fff;
+    font: inherit;
+}
+.pair {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+}
+.buttons { display: flex; gap: 8px; margin-top: 6px; }
+button, .chip {
+    border-radius: 4px;
+    font-weight: 500;
+    cursor: pointer;
+}
+button {
+    padding: 8px 14px;
+    border: 0;
+    background: var(--taxi);
+    color: var(--ink);
+    font-size: 14px;
+}
+button.ghost {
+    background: transparent;
+    border: 1px solid currentColor;
+    color: inherit;
+}
+button:disabled {
+    opacity: .4;
+    cursor: default;
+}
+.chip {
+    background: var(--taxi);
+    color: var(--ink);
+    padding: 6px 10px;
+    margin: 14px 0 0;
+}
+details { margin-top: 20px; }
+summary { cursor: pointer; color: #fff; }
+details ul { padding-left: 16px; margin: 6px 0; font-size: 13px; }
+main {
+    padding: 24px;
+    display: grid;
+    gap: 18px;
+    align-content: start;
+    min-width: 0;
+}
