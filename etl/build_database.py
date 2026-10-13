@@ -59,6 +59,6 @@ def main():
     print(json.dumps(report, indent=2))
     print(f"\nDone -> {args.db}")
     
-    if __name__== "_main_":
+    if __name__ == "_main_":
         main()
 
