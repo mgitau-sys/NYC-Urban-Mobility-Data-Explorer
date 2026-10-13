@@ -144,3 +144,5 @@ def add_features(df):
     for c in ("pickup_datetime", "dropoff_datetime"):
         df[c] = df[c].dt.strftime("%Y-%m-%d %H:%M:%S")
     return df.round({"duration_min": 2,"speed_mph": 2, "fare_per_mile": 2, "tip_pct": 1})
+
+
