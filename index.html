@@ -12,12 +12,12 @@
 </head>
 <body>
     <div class="layout">
-        <aside>
+        <aside> 
             <h1>Where do NYC's yellow cabs slow down?</h1>
             <p class="lede">Every trip below was cleaned, joined to its pickup zone and priced per mile. Filter the city, then read the map, the clock and the routes.</p>
             <form id="filters">
                 <label>Pickup borough
-                    <select name="borough"><option value=" ">All boroughs</option><option>Manhattan</option><option>Brooklyn</option>
+                    <select name="borough"><option value="">All boroughs</option><option>Manhattan</option><option>Brooklyn</option>
                         <option>Queens</option><option>Bronx</option><option>Staten Island</option><option>EWR</option>
                     </select>
                 </label>
@@ -34,11 +34,11 @@
                 <label>Max fare ($)<input type="number" name="max_fare" min="0"></label>
                 </div>
                 <label>Paid by
-                    <select name="payment"><option value=" ">Any method</option><option value="1">Credit card</option><option value="2">Cash</option></select>
+                    <select name="payment"><option value="">Any method</option><option value="1">Credit card</option><option value="2">Cash</option></select>
                 </label>
                 <div class="buttons"><button type="submit">Apply filters</button><button type="button" id="reset" class="ghost">Reset</button></div>
             </form>
-            <p id="ZoneChip" class="chip" hidden></p>
+            <p id="zoneChip" class="chip" hidden></p>
             <details>
                 <summary>Data Quality log</summary>
                 <p class="small">Rows removed during cleaning, by the first rule they broke.</p>
@@ -53,7 +53,7 @@
                     <h2>City map</h2>
                     <label class="inline">Colour zones by
                         <select id="metric"><option value="trips">Trips picked up</option><option value="fare_per_mile">Fare per mile</option>
-                            <option value="speed">Average speed</option><option value="tip">Tip %(card)</option></select>
+                            <option value="speed">Average speed</option><option value="tip">Tip % (card)</option></select>
                     </label>
                 </div>
                 <div id="map" aria-label="Map of taxi zones"></div>
@@ -75,4 +75,4 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
     <script src="app.js"></script>
 </body>
-</html
+</html>

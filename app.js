@@ -14,20 +14,21 @@ const COLUMNS = [
     ["trip_distance", "Miles"],
     ["duration_min", "Minutes"],
     ["speed_mph", "mph"],
-    ["fare_amount", "Fare ($)"],
+    ["fare_amount", "Fare (\$)"],
     ["tip_pct", "Tip %"],
     ["payment_type", "Paid by"]
 ];
-const fmt = (n, d=0) => (n == null ? "-" : Number(n).toLocaleString(undefined, {minimumFractionDigits: d, maximumFractionDigits: d}));
+const fmt = (n, d=0) =>
+    (n == null ? "-" : Number(n).toLocaleString(undefined, {minimumFractionDigits: d, maximumFractionDigits: d}));
 let map, zoneLayer, routeLayer, hourChart, routeChart, totalTrips = 0;
 function params(extra = {} ) {
     const p = new URLSearchParams();
-    new FormData(\$("#filters")).forEach((v, k) => { if (v !=="") p.set(k, v); });
+    new FormData($("#filters")).forEach((v, k) => { if (v !=="") p.set(k, v);});
     if (state.zone) p.set("zone", state.zone.id);
     Object.entries(extra).forEach(([k, v]) => p.set(k, v));
     return p;
 }
-const get = (path, extra) => fetch('/api/${path}?${params(extra)}').then((r) => { if (!r.ok) throw new Error(path); return r.json(); });
+const get = (path, extra) => fetch(`/api/${path}?${params(extra)}`).then((r) => { if (!r.ok) throw new Error(path); return r.json(); });
 async function refresh() {
     $("#status").textContent = "Loading...";
     try {
@@ -39,12 +40,12 @@ async function refresh() {
         await renderTable();
         $("#status").textContent = sum.trips === 0? "No trips match these filters. Widen a range or press Reset." : "";
     } catch (e) {
-        $("#status").textContent = "Could not load date. Is the server running and taxi.db built? (" + e.message + ")";
+        $("#status").textContent = "Could not load data. Is the server running and taxi.db built? (" + e.message + ")";
     }
 }
 function renderKpis(s) {
-    const items = [[fmt(s.trips), "trips"], ["$" + fmt(s.avg_fare, 2), "average fare"], [fmt(s.avg_distance, 1) + "mi", "average distance"],[fmt(s.avg_speed, 1) + " mph", "average speed"],[fmt(s.avg_tip_pct, 1) + "%", "average tip (card)"]];
-    ("#kpis").innerHTML = items.map(([v, 1]) => '<div class="kpi"><b>${v}</b><span>${1}</span></div>').join("");
+    const items = [[fmt(s.trips), "trips"], ["\$" + fmt(s.avg_fare, 2), "average fare"], [fmt(s.avg_distance, 1) + " mi", "average distance"],[fmt(s.avg_speed, 1) + " mph", "average speed"],[fmt(s.avg_tip_pct, 1) + "%", "average tip (card)"]];
+    $("#kpis").innerHTML = items.map(([v, l]) => `<div class="kpi"><b>${v}</b><span>${l}</span></div>`).join("");
 }
 function renderHourly(rows) {
     const labels = rows.map((r) => r.hour + ":00");
@@ -60,14 +61,14 @@ function renderHourly(rows) {
     if (rows.length) {
         const peak = rows.reduce((a,b) => (b.trips > a.trips ? b : a));
         const slow = rows.reduce((a, b) => (b.avg_speed < a.avg_speed ? b : a));
-        $("#insight").textContent = 'Demand peaks at ${peak.hour}:00 (${fmt(peak.trips)} trips); cabs crawl slowest at ${slow.hour}:00 (${fmt(slow.avg_speed, 1)} mph.';
+        $("#insight").textContent = `Demand peaks at ${peak.hour}:00 (${fmt(peak.trips)} trips); cabs crawl slowest at ${slow.hour}:00 (${fmt(slow.avg_speed, 1)} mph).`;
     } else $("#insight").textContent = "";
 }
 function renderRoutes(routes) {
     const cfg = {
         type: "bar",
-        data: { labels: routes.map((r) => '${r.pu_zone} -> ${r.do_zone}'. slice(0, 38)), datasets: [{ label: "Trips", data: routes.map((r) => r.trips), backgroundColor: "#1b2a41" }] },
-        options: { indexAxis: "y", plugins: { lagend: { display: false } } },
+        data: { labels: routes.map((r) => `${r.pu_zone} -> ${r.do_zone}`.slice(0, 38)), datasets: [{ label: "Trips", data: routes.map((r) => r.trips), backgroundColor: "#1b2a41" }] },
+        options: { indexAxis: "y", plugins: { legend: { display: false } } },
     };
     if (routeChart) routeChart.destroy();
     routeChart = new Chart($("#routeChart"), cfg);
@@ -80,21 +81,21 @@ function renderRoutes(routes) {
 }
 async function initMap() {
     map = L.map("map").setView([40.72, -73.93], 10.5);
-    L.tileLayer("https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png", { attribution: "OpenStreetMap CARTO" }).daddTo(map);
+    L.tileLayer("https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png", { attribution: " &copy; OpenStreetMap contributors &copy; CARTO", subdomains: "abcd", maxZoom:19 }).addTo(map);
     const geo = await fetch("/api/geojson").then((r) => r.json());
     zoneLayer = L.geoJSON(geo, {
         style: zoneStyle,
-        onEachFeature: (f, layer) = > {
+        onEachFeature: (f, layer) => {
             layer.bindTooltip(() => tooltip(f.properties.location_id));
             layer.on("click", () => selectZone(f.properties.location_id));
         },
     }).addTo(map);
-    routeater = L.layerGroup().addTo(map);
+    routeLayer = L.layerGroup().addTo(map);
 }
 function range() {
     const m = METRICS[state.metric];
     const vals = Object.values(state.zones).filter((z) => eligible(z)).map((z) => z[m.key]);
-    return { min: Math.min(..vals), max: Math.max(...vals) };
+    return vals.length ? { min: Math.min(...vals), max: Math.max(...vals) } : { min: 0, max: 0 };
 }
 const eligible = (z) => z && z[METRICS[state.metric].key] != null && (state.metric === "trips" || z.trips >= 30);
 function zoneStyle(f) {
@@ -108,29 +109,29 @@ function zoneStyle(f) {
 }
 function tooltip(id) {
     const z = state.zones[id], m = METRICS[state.metric];
-    return '<b>${z ? z.zone : "Zone " + id}</b><br>${z ? fmt(z.trips) + " trips" : "no trips"}' + (z && state.metric !== "trips" ? '<br>${fmt(z[m.key], 1)} ${m.label}' : "");
+    return `<b>${z ? z.zone : "Zone " + id}</b><br>${z ? fmt(z.trips) + " trips" : "no trips"}` + (z && state.metric !== "trips" ? `<br>${fmt(z[m.key], 1)} ${m.label}` : "");
 }
 function renderMap() {
-    if (!zoneLyer) return;
+    if (!zoneLayer) return;
     zoneLayer.setStyle(zoneStyle);
     const r = range(), m = METRICS[state.metric];
-    $("#legend").innerHTML = '${fmt(r.min, 1)} ${m.label}' + RAMP.map((c) => '<i style="background:${.c}"></i>.join("") + '${fmt(r.max, 1)}' + (state.metric === "trips" ? "" : " &nbsp; (grey = fewer than 30 trips)");
+    $("#legend").innerHTML = `${fmt(r.min, 1)} ${m.label} ` + RAMP.map((c) => `<i style="background:${c}"></i>`).join("") + ` ${fmt(r.max, 1)}` + (state.metric === "trips" ? "" : " &nbsp; (grey = fewer than 30 trips)");
 }
 function selectZone(id) {
     const z = state.zones[id];
     state.zone = { id, name: z ? z.zone : "Zone " + id };
     $("#zoneChip").hidden = false;
-    $("#zoneChip").textContent = 'Pickup zone: ${state.zone.name} (click to clear)';
+    $("#zoneChip").textContent = `Pickup zone: ${state.zone.name} (click to clear)`;
     state.page = 1;
     refresh();
 }
 $("#zoneChip").addEventListener("click", () => { state.zone = null; $("#zoneChip").hidden = true; state.page = 1; refresh(); });
 async function renderTable() {
     const rows = await get("trips", { sort: state.sort, order: state.order, page: state.page, size: 15 });
-    const arrow = (key) => (key === state.sort ? (state.order === "asc" ? "" : "") : "");
-    $("#tripTable").innerHTML = "<thead><tr>" + COLUMNS.map(([k, 1]) => '<th data-key="${k}">${1}${arrow(k)}</th>').join("") + "</tr></thead><tbody>" + rows.map((r) => "<tr>" + COLUMNS.map(([k, 1]) => '<td>${r[k] == null ? "-" : r[k]}</td>').join("") + "</tr>").join("") + "</tbody>";
+    const arrow = (key) => (key === state.sort ? (state.order === "asc" ? "▲" : "▼") : "");
+    $("#tripTable").innerHTML = "<thead><tr>" + COLUMNS.map(([k, l]) => `<th data-key="${k}">${l}${arrow(k)}</th>`).join("") + "</tr></thead><tbody>" + rows.map((r) => "<tr>" + COLUMNS.map(([k, l]) => `<td>${r[k] == null ? "-" : r[k]}</td>`).join("") + "</tr>").join("") + "</tbody>";
     const pages = Math.max(1, Math.ceil(totalTrips / 15));
-    $("#pageInfo").textContent = 'Page ${state.page} of ${fmt(pages)}';
+    $("#pageInfo").textContent = `Page ${state.page} of ${fmt(pages)}`;
     $("#prev").disabled = state.page <= 1;
     $("#next").disabled = state.page >= pages;
     document.querySelectorAll("th").forEach((th) => th.addEventListener("click", () => {
@@ -140,10 +141,10 @@ async function renderTable() {
 }
 async function loadQuality() {
     const rows = await fetch("/api/exclusions").then((r) => r.json());
-    $("#quality").innerHTML = rows.map((r) => '<li>&{r.reason.replaceAll("-", " ")}: ${fmt(r.rows)}</li>').json("") || "<li>Nothing was excluded.</li>";
+    $("#quality").innerHTML = rows.map((r) => `<li>${r.reason.replaceAll("-", " ")}: ${fmt(r.rows)}</li>`).join("") || "<li>Nothing was excluded.</li>";
 }
 $("#filters").addEventListener("submit", (e) => { e.preventDefault(); state.page = 1; refresh(); });
-$("#reset").addEventListener("click", () => { $("#filters").reset(); state.zone = null; $("#zoneChip").hidden = true; state.page = 1: refresh(); });
+$("#reset").addEventListener("click", () => { $("#filters").reset(); state.zone = null; $("#zoneChip").hidden = true; state.page = 1; refresh(); });
 $("#metric").addEventListener("change", (e) => { state.metric = e.target.value; renderMap(); });
 $("#prev").addEventListener("click", () => { state.page--; renderTable(); });
 $("#next").addEventListener("click", () => { state.page++; renderTable(); });
