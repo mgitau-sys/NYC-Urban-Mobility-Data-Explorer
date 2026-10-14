@@ -1,18 +1,28 @@
 const $ = (s) => document.querySelector(s);
 const state = { zone: null, page: 1, sort: "pickup_datetime", order:"desc", metric: "trips", zones: {} };
-const RAMP = [ #efefe6", "#fbe38e", "#f7b500", "#c77d12", "#7a4a2a", "#1b2a41"] ;
+const RAMP = ["#efefe6", "#fbe38e", "#f7b500", "#c77d12", "#7a4a2a", "#1b2a41"] ;
 const METRICS = {
     trips: { key: "trips", label: "trips", log:true },
     fare_per_mile: { key: "avg_fare_per_mile", label: "$/mile"},
     speed: { key: "avg_speed", label: "mph" },
     tip: { key: "avg_tip_pct", label: "%tip"},
 };
-const COLUMNS = [["pickup_datetime", "Pickup time"], ["pu_zone", "From"], ["do_zone", "To"], ["trip_distance", "Miles"], ["duration_min", "Minutes"], ["speed_mph", "mph"],["fare_amount", "Fare ($)"], ["tip_pct", "Tip %"], ["payment_type", "Paid by"]];
+const COLUMNS = [
+    ["pickup_datetime", "Pickup time"],
+    ["pu_zone", "From"],
+    ["do_zone", "To"],
+    ["trip_distance", "Miles"],
+    ["duration_min", "Minutes"],
+    ["speed_mph", "mph"],
+    ["fare_amount", "Fare ($)"],
+    ["tip_pct", "Tip %"],
+    ["payment_type", "Paid by"]
+];
 const fmt = (n, d=0) => (n == null ? "-" : Number(n).toLocaleString(undefined, {minimumFractionDigits: d, maximumFractionDigits: d}));
 let map, zoneLayer, routeLayer, hourChart, routeChart, totalTrips = 0;
 function params(extra = {} ) {
     const p = new URLSearchParams();
-    new FormData($("#filters")).forEach((v, k) => { if (v !=="") p.set(k, v); });
+    new FormData(\$("#filters")).forEach((v, k) => { if (v !=="") p.set(k, v); });
     if (state.zone) p.set("zone", state.zone.id);
     Object.entries(extra).forEach(([k, v]) => p.set(k, v));
     return p;
