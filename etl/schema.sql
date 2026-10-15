@@ -63,7 +63,6 @@ CREATE INDEX idx_trips_payment      ON trips(payment_type_id);
 CREATE INDEX idx_feat_hour          ON trip_features(pickup_hour);
 CREATE INDEX idx_feat_bucket        ON trip_features(time_bucket);
 CREATE INDEX idx_excluded_reason    ON excluded_records(reason);
-
 CREATE VIEW trip_view AS
 SELECT t.trip_id, t.pickup_datetime, t.dropoff_datetime,
 
@@ -80,4 +79,3 @@ JOIN zones pz        ON pz.location_id = t.pu_location_id
 JOIN zones dz        ON dz.location_id = t.do_location_id
 JOIN payment_types p ON p.payment_type_id = t.payment_type_id
 JOIN rate_cades r    ON r.rate_code_id = t.rate_code_id;
-

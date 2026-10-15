@@ -15,7 +15,7 @@ MAX_FARE = 500
 MAX_SPEED_MPH = 80
 MAX_PASSENGERS = 6
 
-RENAME = {"vendorid": "vendor_id", "ratecodeid": "rete_code_id", "pulocationid": "pu_location_id", "dolocationid": "do_location_id", "payment_type": "paymen_type_id", "tpep_pickup_datetime": "pickup_datetime", "tpep_dropoff_datetime": "dropoff_datetime"}
+RENAME = {"vendorid": "vendor_id", "ratecodeid": "rate_code_id", "pulocationid": "pu_location_id", "dolocationid": "do_location_id", "payment_type": "payment_type_id", "tpep_pickup_datetime": "pickup_datetime", "tpep_dropoff_datetime": "dropoff_datetime"}
 OPTIONAL_MONEY = ["extra", "mta_tax", "tip_amount", "tolls_amount", "improvement_surcharge", "congestion_surcharge", "airport_fee"]
 NUMERIC = ["vendor_id", "passenger_count", "trip_distance", "rate_code_id", "pu_location_id", "do_location_id", "payment_type_id", "fare_amount", "total_amount"] + OPTIONAL_MONEY
 KEY_FIELDS = ["pickup_datetime", "dropoff_datetime", "pu_location_id", "do_location_id", "trip_distance", "fare_amount", "total_amount"]
@@ -27,12 +27,12 @@ def _normalise_columns(df):
 
 def load_trips(path):
     trips = _normalise_columns(pd.read_parquet(path))
-    trips["source_row"] = np.arrange(len(trips))
+    trips["source_row"] = np.arange(len(trips))
     return trips
 
     
 def _outer_points(geometry):
-    if geometry["type"] == "polygon":
+    if geometry["type"] == "Polygon":
         return geometry["coordinates"][0]
     points = []
     for polygon in geometry["coordinates"]:
@@ -41,9 +41,9 @@ def _outer_points(geometry):
             
 def load_zones(lookup_csv, geojson_path):
     zones = _normalise_columns(pd.read_csv(lookup_csv))
-    zones = zones.rename(columns={"locationid": "location_id"})
+    zones = zones.rename(columns={"LocationID": "location_id"})
     for column, default in [("borough", "Unknown"), ("zone", "Unknown"), ("service_zone", "N/A")]:
-        zones[column] = zones[column].fillna(default)
+            zones[column] = zones[column].fillna(default)
         
     with open(geojson_path) as f:
         geo = json.load(f)
@@ -62,7 +62,7 @@ def load_zones(lookup_csv, geojson_path):
         
         zones["centroid_lat"] = zones["location_id"].map(lambda value: centroids.get(value, (None, None))[0])
         zones["centroid_lon"] = zones["location_id"].map(lambda value: centroids.get(value, (None, None))[1])
-        columns = ["location_id", "borough", "zone", "service_zone", "centaoid_lat", "centroid_lon"]
+        columns = ["location_id", "borough", "zone", "service_zone", "centroid_lat", "centroid_lon"]
         return zones[columns], geo
     
     
@@ -74,12 +74,12 @@ def clean_trips(df, valid_zone_ids):
     for column in OPTIONAL_MONEY:
         if column not in df:
             df[column] = 0.0
-    for c in NUMERIC:
+    for column in NUMERIC:
         df[column] = pd.to_numeric(df[column], errors="coerce")
     
-    report["imputed"]["optional_fee_null_to_0"] = int([OPTIONAL_MONEY].isna().sum().sum())
+    report["imputed"]["optional_fee_null_to_0"] = df([OPTIONAL_MONEY].isna().sum().sum())
     df[OPTIONAL_MONEY] = df[OPTIONAL_MONEY].fillna(0.0)
-    m = df["Passenger_count"].isna() | (df["passenger_count"] == 0)
+    m = df["passenger_count"].isna() | (df["passenger_count"] == 0)
     report["imputed"]["passenger_count_missing_or_0_to_1"] = int(m.sum())
     df.loc[m, "passenger_count"] = 1
     m = ~df["rate_code_id"].isin([1, 2, 3, 4, 5, 6])
@@ -92,53 +92,53 @@ def clean_trips(df, valid_zone_ids):
     report["imputed"]["vendor_invalid_to_0"] = int(m.sum())
     df.loc[m, "vendor_id"] = 0
     
-    df["duration_min"] = (df["dropoff_datetime"] - ["pickup_datetime"]).dt.total_seconds() / 60
+    df["duration_min"] = (df["dropoff_datetime"] - df["pickup_datetime"]).dt.total_seconds() / 60
     df["speed_mph"] = (df["trip_distance"] / (df["duration_min"] / 60)).replace([np.inf, -np.inf], np.nan)
     month = df["pickup_datetime"].dt.to_period("M")
     
     reason = pd.Series("", index=df.index)
     
     def flag(name, mask):
-        hit = mask.fillna(False) & (reason == "")
-        reason[hit] = name
+       hit = mask.fillna(False) & (reason == "")
+       reason[hit] = name
         
-        flag("missing_key_field", df[KEY_FIELDS].isna().any(axis=1))
-        flag("exact_duplicate", df.duplicate(subset=KEY_FIELDS + ["vendor_id"], keep="first"))
-        flag("pickup_outside_file_month", month != month.mode()[0])
-        flag("dropoff_no_after_pickup",  df["duration_min"] <= 0)
-        flag("duration_under_1min", df["duration_min"] < MIN_MINUTES)
-        flag("duration_over_3h", df["duration_min"] > MAX_MINUTES)
-        flag("distance_not_positive", df["trip_distance"] <= 0 )
-        flag("distance_under_0.1mi", df["trip_distance"] < MIN_MILES)
-        flag("distance_over_100", df["trip_distance"] > MAX_MILES)
-        flag("fare_not_positive", df["fare_amount"] <=0)
-        flag("fare_over_500", df["fare_amount"] > MAX_FARE)
-        valid_zones = df["pu_location_id"].isin(valid_zone_ids) & df["do_location_id"].isin(valid_zone_ids)
-        flag("unknown_or_invalid_zone", ~valid_zones)
-        flag("speed_over_80mp", df["speed_mph"] > MAX_SPEED_MPH)
+       flag("missing_key_field", df[KEY_FIELDS].isna().any(axis=1))
+       flag("exact_duplicate", df.duplicated(subset=KEY_FIELDS + ["vendor_id"], keep="first"))
+       flag("pickup_outside_file_month", month != month.mode()[0])
+       flag("dropoff_no_after_pickup",  df["duration_min"] <= 0)
+       flag("duration_under_1min", df["duration_min"] < MIN_MINUTES)
+       flag("duration_over_3h", df["duration_min"] > MAX_MINUTES)
+       flag("distance_not_positive", df["trip_distance"] <= 0 )
+       flag("distance_under_0.1mi", df["trip_distance"] < MIN_MILES)
+       flag("distance_over_100", df["trip_distance"] > MAX_MILES)
+       flag("fare_not_positive", df["fare_amount"] <=0)
+       flag("fare_over_500", df["fare_amount"] > MAX_FARE)
+       valid_zones = df["pu_location_id"].isin(valid_zone_ids) & df["do_location_id"].isin(valid_zone_ids)
+       flag("unknown_or_invalid_zone", ~valid_zones)
+       flag("speed_over_80mp", df["speed_mph"] > MAX_SPEED_MPH)
         
-        bad = reason.ne("")
-        excluded = df.loc[bad, ["source_row", "pickup_datetime", "trip_distance", "fare_amount", "total_amount"]].copy()
-        excluded["pickup_datetime"] = excluded["pickup_datetime"].dt.strftime("%Y-%m-%d %H:%M:%S" )
-        excluded["reason"] = reason[bad]
-        
-        kept = df.loc[~bad].drop(columns=["speed_mph"]).copy()
-        integer_columns = ("vendor_id", "passenger_count", "rate_code_id", "payment_type_id", "pu_location", "do_location_id")
-        kept[integer_columns] = kept[integer_columns].astype(int)
+       bad = reason.ne("")
+       excluded = df.loc[bad, ["source_row", "pickup_datetime", "trip_distance", "fare_amount", "total_amount"]].copy()
+       excluded["pickup_datetime"] = excluded["pickup_datetime"].dt.strftime("%Y-%m-%d %H:%M:%S" )
+       excluded["reason"] = reason[bad]
+       
+       kept = df.loc[~bad].drop(columns=["speed_mph"]).copy()
+       integer_columns = ("vendor_id", "passenger_count", "rate_code_id", "payment_type_id", "pu_location_id", "do_location_id")
+       kept[integer_columns] = kept[integer_columns].astype(int)
             
-        report["rows_kept"] = len(kept)
-        report["rows_excluded"] = int(bad.sum())
-        report["excluded_by_reason"] = {key: int(value) for key, value in reason[bad].value_counts().items()}
-        return kept, excluded, report
+       report["rows_kept"] = len(kept)
+       report["rows_excluded"] = int(bad.sum())
+       report["excluded_by_reason"] = {key: int(value) for key, value in reason[bad].value_counts().items()}
+       return kept, report, excluded
     
     
 def add_features(df):
     df = df.copy()
     df["pickup_hour"] = df["pickup_datetime"].dt.hour
     df["pickup_dow"] = df["pickup_datetime"].dt.dayofweek
-    df["time_backet"] = pd.cut(df["pickup_hour"], bin=[-1, 5, 9, 15, 19, 23],
+    df["time_bucket"] = pd.cut(df["pickup_hour"], bins=[-1, 5, 9, 15, 19, 23],
                                labels=["overnight", "Morning", "Midday", "Evening", "Night",]).astype(str)
-    df["speed_mph"] = df["trip_distance"] / (df["duratio_min"] / 60)
+    df["speed_mph"] = df["trip_distance"] / (df["duration_min"] / 60)
     df["fare_per_mile"] = df["fare_amount"] / df["trip_distance"]
     df["tip_pct"] = np.where(df["payment_type_id"] == 1, df["tip_amount"] / df["fare_amount"] * 100, np.nan)
     for c in ("pickup_datetime", "dropoff_datetime"):
