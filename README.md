@@ -4,6 +4,7 @@ An interactive dashboard that answers one question: **where and when do NYC's ye
 
 - **Live app:** https://nyc-urban-mobility-data-explorer-1.onrender.com/ (free hosting: the first load after a quiet spell can take 30–60 seconds)
 - **Video walkthrough:** https://youtu.be/2Jmu44qv78I
+- **Technical report (PDF):** [Read the report](https://drive.google.com/file/d/1uCSHyPxFKhuCrSJlbgNMf5avMrLuw4bQ/view?usp=sharing)
 - **Team task sheet:** [Brain Boosters task allocation and meeting log](https://docs.google.com/spreadsheets/d/17ZfRFxAy5o7xeZrytVFuyV5gzzx9lc9povi6jo965d8/edit?usp=sharing)
 
 ## Team: Brain Boosters
