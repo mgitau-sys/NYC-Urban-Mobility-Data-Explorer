@@ -38,15 +38,15 @@ def build_where(args, skip=()):
             continue
 
         try:
-            value=cast(value)
+            value = cast(value)
         except ValueError:
             continue
 
+        clauses.append(condition)
         params.append(value)
-        params.append(condition)
 
-        if clauses:
-            where = " WHERE " + " AND ".join(clauses)
-        else:
-            where = ""
-            return where, params
+    if clauses:
+        where = " WHERE " + " AND ".join(clauses)
+    else:
+        where = ""
+    return where, params

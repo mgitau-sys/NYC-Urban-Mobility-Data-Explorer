@@ -26,10 +26,14 @@ def _normalise_columns(df):
     return df.rename(columns=RENAME)
 
 def load_trips(path):
-    trips = _normalise_columns(pd.read_parquet(path))
+    if str(path).endswith(".csv"):
+        raw = pd.read_csv(path, low_memory=False)
+    else:
+        raw = pd.read_parquet(path)
+    trips = _normalise_columns(raw)
+
     trips["source_row"] = np.arange(len(trips))
     return trips
-
     
 def _outer_points(geometry):
     if geometry["type"] == "Polygon":
@@ -41,29 +45,30 @@ def _outer_points(geometry):
             
 def load_zones(lookup_csv, geojson_path):
     zones = _normalise_columns(pd.read_csv(lookup_csv))
-    zones = zones.rename(columns={"LocationID": "location_id"})
+    zones = zones.rename(columns={"locationid": "location_id"})
     for column, default in [("borough", "Unknown"), ("zone", "Unknown"), ("service_zone", "N/A")]:
             zones[column] = zones[column].fillna(default)
         
     with open(geojson_path) as f:
         geo = json.load(f)
-        centroids = {}
+
+    centroids = {}
     for feature in geo["features"]:
         properties = feature["properties"]
-        location_id = int(properties.get("location_id", properties.get("location_id")))
+        location_id = int(properties.get("LocationID", properties.get("location_id")))
         points = _outer_points(feature["geometry"])
         longitude = sum(point[0] for point in points) / len(points)
         latitude = sum(point[1] for point in points) / len(points)
         
         if abs(longitude) > 180 or abs(latitude) > 90:
-            raise ValueError("taxi_zones GeoJSON"  "GGeoJson export")
+            raise ValueError("taxi_zones GeoJSON"  "GeoJson export")
         feature["properties"] = {"location_id": location_id}
         centroids[location_id] = (latitude, longitude)
         
-        zones["centroid_lat"] = zones["location_id"].map(lambda value: centroids.get(value, (None, None))[0])
-        zones["centroid_lon"] = zones["location_id"].map(lambda value: centroids.get(value, (None, None))[1])
-        columns = ["location_id", "borough", "zone", "service_zone", "centroid_lat", "centroid_lon"]
-        return zones[columns], geo
+    zones["centroid_lat"] = zones["location_id"].map(lambda value: centroids.get(value, (None, None))[0])
+    zones["centroid_lon"] = zones["location_id"].map(lambda value: centroids.get(value, (None, None))[1])
+    columns = ["location_id", "borough", "zone", "service_zone", "centroid_lat", "centroid_lon"]
+    return zones[columns], geo
     
     
 def clean_trips(df, valid_zone_ids):
@@ -77,7 +82,7 @@ def clean_trips(df, valid_zone_ids):
     for column in NUMERIC:
         df[column] = pd.to_numeric(df[column], errors="coerce")
     
-    report["imputed"]["optional_fee_null_to_0"] = df([OPTIONAL_MONEY].isna().sum().sum())
+    report["imputed"]["optional_fee_null_to_0"] = int(df[OPTIONAL_MONEY].isna().sum().sum())
     df[OPTIONAL_MONEY] = df[OPTIONAL_MONEY].fillna(0.0)
     m = df["passenger_count"].isna() | (df["passenger_count"] == 0)
     report["imputed"]["passenger_count_missing_or_0_to_1"] = int(m.sum())
@@ -102,34 +107,34 @@ def clean_trips(df, valid_zone_ids):
        hit = mask.fillna(False) & (reason == "")
        reason[hit] = name
         
-       flag("missing_key_field", df[KEY_FIELDS].isna().any(axis=1))
-       flag("exact_duplicate", df.duplicated(subset=KEY_FIELDS + ["vendor_id"], keep="first"))
-       flag("pickup_outside_file_month", month != month.mode()[0])
-       flag("dropoff_no_after_pickup",  df["duration_min"] <= 0)
-       flag("duration_under_1min", df["duration_min"] < MIN_MINUTES)
-       flag("duration_over_3h", df["duration_min"] > MAX_MINUTES)
-       flag("distance_not_positive", df["trip_distance"] <= 0 )
-       flag("distance_under_0.1mi", df["trip_distance"] < MIN_MILES)
-       flag("distance_over_100", df["trip_distance"] > MAX_MILES)
-       flag("fare_not_positive", df["fare_amount"] <=0)
-       flag("fare_over_500", df["fare_amount"] > MAX_FARE)
-       valid_zones = df["pu_location_id"].isin(valid_zone_ids) & df["do_location_id"].isin(valid_zone_ids)
-       flag("unknown_or_invalid_zone", ~valid_zones)
-       flag("speed_over_80mp", df["speed_mph"] > MAX_SPEED_MPH)
+    flag("missing_key_field", df[KEY_FIELDS].isna().any(axis=1))
+    flag("exact_duplicate", df.duplicated(subset=KEY_FIELDS + ["vendor_id"], keep="first"))
+    flag("pickup_outside_file_month", month != month.mode()[0])
+    flag("dropoff_not_after_pickup",  df["duration_min"] <= 0)
+    flag("duration_under_1min", df["duration_min"] < MIN_MINUTES)
+    flag("duration_over_3h", df["duration_min"] > MAX_MINUTES)
+    flag("distance_not_positive", df["trip_distance"] <= 0 )
+    flag("distance_under_0.1mi", df["trip_distance"] < MIN_MILES)
+    flag("distance_over_100mi", df["trip_distance"] > MAX_MILES)
+    flag("fare_not_positive", df["fare_amount"] <=0)
+    flag("fare_over_500", df["fare_amount"] > MAX_FARE)
+    valid_zones = df["pu_location_id"].isin(valid_zone_ids) & df["do_location_id"].isin(valid_zone_ids)
+    flag("unknown_or_invalid_zone", ~valid_zones)
+    flag("speed_over_80mph", df["speed_mph"] > MAX_SPEED_MPH)
         
-       bad = reason.ne("")
-       excluded = df.loc[bad, ["source_row", "pickup_datetime", "trip_distance", "fare_amount", "total_amount"]].copy()
-       excluded["pickup_datetime"] = excluded["pickup_datetime"].dt.strftime("%Y-%m-%d %H:%M:%S" )
-       excluded["reason"] = reason[bad]
+    bad = reason.ne("")
+    excluded = df.loc[bad, ["source_row", "pickup_datetime", "trip_distance", "fare_amount", "total_amount"]].copy()
+    excluded["pickup_datetime"] = excluded["pickup_datetime"].dt.strftime("%Y-%m-%d %H:%M:%S" )
+    excluded["reason"] = reason[bad]
        
-       kept = df.loc[~bad].drop(columns=["speed_mph"]).copy()
-       integer_columns = ("vendor_id", "passenger_count", "rate_code_id", "payment_type_id", "pu_location_id", "do_location_id")
-       kept[integer_columns] = kept[integer_columns].astype(int)
+    kept = df.loc[~bad].drop(columns=["speed_mph"]).copy()
+    integer_columns = ["vendor_id", "passenger_count", "rate_code_id", "payment_type_id", "pu_location_id", "do_location_id"]
+    kept[integer_columns] = kept[integer_columns].astype(int)
             
-       report["rows_kept"] = len(kept)
-       report["rows_excluded"] = int(bad.sum())
-       report["excluded_by_reason"] = {key: int(value) for key, value in reason[bad].value_counts().items()}
-       return kept, report, excluded
+    report["rows_kept"] = len(kept)
+    report["rows_excluded"] = int(bad.sum())
+    report["excluded_by_reason"] = {key: int(value) for key, value in reason[bad].value_counts().items()}
+    return kept, excluded, report
     
     
 def add_features(df):

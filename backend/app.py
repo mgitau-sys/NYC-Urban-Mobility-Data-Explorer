@@ -3,12 +3,12 @@ from flask import Flask, jsonify, request, send_from_directory
 from algorithms import top_k
 from db import build_where, query
 
-Root = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..")
-app = Flask(__name__, static_folder=os.path.join(Root, "frontend"), static_url_path="")
+ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..")
+app = Flask(__name__, static_folder=os.path.join(ROOT, "frontend"), static_url_path="")
 
 SORTABLE = {"pickup_datetime", "pu_zone", "do_zone", "trip_distance", "duration_min", "speed_mph",
             "fare_amount", "tip_pct", "payment_type"}
-TRIP_COLUMNS = "pickup_datetime", "pu_zone", "do_zone", "trip_distance", "duration_min", "speed_mph", "fare_amount", "tip_pct", "payment_type"
+TRIP_COLUMNS = "pickup_datetime, pu_zone, do_zone, trip_distance, duration_min, speed_mph, fare_amount, tip_pct, payment_type"
 
 @app.route("/")
 def index():
@@ -16,7 +16,7 @@ def index():
 
 @app.route("/api/geojson")
 def geojson():
-    return send_from_directory (os.path.join(Root, "data"), "zones_clean.geojson")
+    return send_from_directory (os.path.join(ROOT, "data"), "zones_clean.geojson")
 
 @app.route("/api/summary")
 def summary():
@@ -33,12 +33,12 @@ def hourly():
            " GROUP BY pickup_hour ORDER BY pickup_hour")
     return jsonify(query(sql, params))
 
-@app.rout("/api/zones")
+@app.route("/api/zones")
 def zones():
     where, params = build_where(request.args, skip=("zone",))
     sql = ("SELECT pu_location_id AS location_id, pu_zone AS zone, COUNT(*) AS trips, AVG(fare_per_mile) AS avg_fare_per_mile,"
            "AVG(speed_mph) AS avg_speed, AVG(tip_pct) AS avg_tip_pct FROM trip_view" + where +
-           "GROUP BY pu_location_id")
+           " GROUP BY pu_location_id")
     return jsonify(query(sql, params))
 
 @app.route("/api/trips")
@@ -56,7 +56,7 @@ def  trips():
 
     size = min(request.args.get("size", 15, type=int), 100)
     page = max(request.args.get("page", 1, type=int), 1)
-    sql = (f"SELECT {TRIP_COLUMNS} FROM trip_view{where} ORDER BY {sort} {direction} LIMIT ? OFFSET")
+    sql = (f"SELECT {TRIP_COLUMNS} FROM trip_view{where} ORDER BY {sort} {direction} LIMIT ? OFFSET ?")
 
     return jsonify(query(sql, params + [size, (page -1) * size]))
 

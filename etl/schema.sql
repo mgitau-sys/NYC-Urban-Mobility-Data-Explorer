@@ -22,7 +22,7 @@ CREATE TABLE trips (
     do_location_id          INTEGER NOT NULL REFERENCES zones(location_id),
     rate_code_id            INTEGER NOT NULL REFERENCES rate_codes(rate_code_id),
     payment_type_id         INTEGER NOT NULL REFERENCES payment_types(payment_type_id),
-    passenger_count         INTEGER NOT NULL REFERENCES CHECK (passenger_count BETWEEN 1 AND 6),
+    passenger_count         INTEGER NOT NULL CHECK (passenger_count BETWEEN 1 AND 6),
     trip_distance           REAL    NOT NULL CHECK (trip_distance > 0),
     fare_amount             REAL    NOT NULL CHECK (fare_amount > 0),
     extra                   REAL    NOT NULL,
@@ -64,7 +64,7 @@ CREATE INDEX idx_trips_payment      ON trips(payment_type_id);
 CREATE INDEX idx_feat_hour          ON trip_features(pickup_hour);
 CREATE INDEX idx_feat_bucket        ON trip_features(time_bucket);
 CREATE INDEX idx_excluded_reason    ON excluded_records(reason);
-CREATE VIEW trip_view AS pu_borough
+CREATE VIEW trip_view AS
 SELECT t.trip_id, t.pickup_datetime, t.dropoff_datetime,
 
 t.pu_location_id, pz.zone AS pu_zone, pz.borough AS pu_borough,

@@ -46,7 +46,7 @@ def main():
     
     con.executemany("INSERT INTO rate_codes VALUES (?,?)", clean.RATE_CODES.items())
     con.executemany("INSERT INTO vendors VALUES (?,?)", clean.VENDORS.items())
-    con.executemany("INSERT INTO payment_types VALUES (?,?)", clean.PAYMENT_TYPES_ITEMS())
+    con.executemany("INSERT INTO payment_types VALUES (?,?)", clean.PAYMENT_TYPES.items())
     zones.to_sql("zones", con, if_exists="append", index=False)
     kept[TRIP_COLS].to_sql("trips", con, if_exists="append", index=False, chunksize=50000 )
     kept[FEATURE_COLS].to_sql("trip_features", con, if_exists="append", index=False, chunksize=50000)
@@ -61,7 +61,5 @@ def main():
     print(json.dumps(report, indent=2))
     print(f"\nDone -> {args.db}")
     
-    if __name__ == "__main__":
-        main()
-
-
+if __name__ == "__main__":
+    main()

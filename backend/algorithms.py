@@ -48,21 +48,21 @@ class MinHeap:
             self._swap(i, smallest)
             i = smallest
 
-    def top_k(rows, k, score_of):
-        heap = MinHeap()
-        for row in rows:
-            score = score_of(row)
-            if heap.size() < k:
-                heap.push(score, row)
-            elif score > heap.peek_score():
-                heap.pop_min()
-                heap.push(score, row)
-            ascending = []
+def top_k(rows, k, score_of):
+    heap = MinHeap()
+    for row in rows:
+        score = score_of(row)
+        if heap.size() < k:
+            heap.push(score, row)
+        elif score > heap.peek_score():
+            heap.pop_min()
+            heap.push(score, row)
 
-            while heap.size() > 0:
-                ascending.append(heap.pop_min()[1])
-                ascending.reverse()
-                return ascending
+    ascending = []
+    while heap.size() > 0:
+        ascending.append(heap.pop_min()[1])
+    ascending.reverse()
+    return ascending
 
 
 
